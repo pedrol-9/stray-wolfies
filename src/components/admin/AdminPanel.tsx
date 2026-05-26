@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   isPushEnabled,
   isSoundEnabled,
@@ -6,47 +6,49 @@ import {
   setPushEnabled,
   setSoundEnabled,
   showOrderNotification,
-} from '../../lib/admin-notify-prefs';
-import { playNewOrderAlert } from '../../lib/order-alert-sound';
-import { ACTIVE_STATUSES, STATUS_LABELS } from '../../lib/order-status';
+} from "../../lib/admin-notify-prefs";
+import { playNewOrderAlert } from "../../lib/order-alert-sound";
+import { ACTIVE_STATUSES, STATUS_LABELS } from "../../lib/order-status";
+import { getSupabaseClient } from "../../lib/supabase-client";
 import {
   formatOrderWhatsAppText,
   getOwnerWhatsApp,
   openWhatsAppToOwner,
-} from '../../lib/order-whatsapp';
-import type { AdminOrder, OrderStatus } from '../../types/admin-order';
-import OrderCard from './OrderCard';
+} from "../../lib/order-whatsapp";
+import type { AdminOrder, OrderStatus } from "../../types/admin-order";
+import OrderCard from "./OrderCard";
 
-type Tab = 'active' | 'done';
+type Tab = "incoming" | "production" | "dispatched";
 
 function adminHeaders(pin: string): HeadersInit {
-  return { 'x-admin-pin': pin, 'Content-Type': 'application/json' };
+  return { "x-admin-pin": pin, "Content-Type": "application/json" };
 }
 
 export default function AdminPanel() {
-  const [pin, setPin] = useState('');
+  const [pin, setPin] = useState("");
   const [authed, setAuthed] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-  const [tab, setTab] = useState<Tab>('active');
-  const [searchInput, setSearchInput] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [tab, setTab] = useState<Tab>("incoming");
+  const [searchInput, setSearchInput] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [loading, setLoading] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [soundOn, setSoundOn] = useState(true);
   const [pushOn, setPushOn] = useState(true);
-  const [pushPermission, setPushPermission] = useState<NotificationPermission>('default');
+  const [pushPermission, setPushPermission] =
+    useState<NotificationPermission>("default");
   const [latestNewOrder, setLatestNewOrder] = useState<AdminOrder | null>(null);
   const knownOrderIdsRef = useRef<Set<string>>(new Set());
   const alertsInitializedRef = useRef(false);
   const ownerWhatsApp = getOwnerWhatsApp();
 
   const loadShop = useCallback(async (adminPin: string) => {
-    const res = await fetch('/api/admin/shop', {
+    const res = await fetch("/api/admin/shop", {
       headers: adminHeaders(adminPin),
     });
-    if (!res.ok) throw new Error('PIN incorrecto o sin configurar');
+    if (!res.ok) throw new Error("PIN incorrecto o sin configurar");
     const data = await res.json();
     setIsOpen(data.is_open);
   }, []);
@@ -57,14 +59,14 @@ export default function AdminPanel() {
     async (adminPin: string, opts: { filter?: Tab; q?: string }) => {
       const params = new URLSearchParams();
       if (opts.q && opts.q.trim().length >= 2) {
-        params.set('q', opts.q.trim());
+        params.set("q", opts.q.trim());
       } else {
-        params.set('filter', opts.filter ?? 'active');
+        params.set("filter", opts.filter ?? "incoming");
       }
       const res = await fetch(`/api/admin/orders?${params}`, {
         headers: adminHeaders(adminPin),
       });
-      if (!res.ok) throw new Error('No se pudieron cargar pedidos');
+      if (!res.ok) throw new Error("No se pudieron cargar pedidos");
       const data = await res.json();
       setOrders(data.orders ?? []);
     },
@@ -77,9 +79,9 @@ export default function AdminPanel() {
     try {
       await loadShop(pin);
       await loadOrders(pin, isSearching ? { q: searchQuery } : { filter: tab });
-      setError('');
+      setError("");
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error');
+      setError(e instanceof Error ? e.message : "Error");
     } finally {
       setLoading(false);
     }
@@ -87,9 +89,11 @@ export default function AdminPanel() {
 
   const handleNewOrdersDetected = useCallback(
     (fetched: AdminOrder[]) => {
-      const newPlaced = fetched.filter(
-        (o) => o.status === 'placed' && !knownOrderIdsRef.current.has(o.id),
-      );
+      const newPlaced = Array.isArray(fetched)
+        ? fetched.filter(
+            (o) => o.status === "placed" && !knownOrderIdsRef.current.has(o.id),
+          )
+        : [];
       for (const o of fetched) knownOrderIdsRef.current.add(o.id);
 
       if (!alertsInitializedRef.current) {
@@ -111,7 +115,7 @@ export default function AdminPanel() {
     try {
       setSoundOn(isSoundEnabled());
       setPushOn(isPushEnabled());
-      if (typeof Notification !== 'undefined') {
+      if (typeof Notification !== "undefined") {
         setPushPermission(Notification.permission);
       }
       knownOrderIdsRef.current = new Set();
@@ -119,9 +123,9 @@ export default function AdminPanel() {
       await loadShop(pin);
       await loadOrders(pin, { filter: tab });
       setAuthed(true);
-      setError('');
+      setError("");
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error');
+      setError(e instanceof Error ? e.message : "Error");
     } finally {
       setLoading(false);
     }
@@ -130,7 +134,7 @@ export default function AdminPanel() {
   async function enablePush() {
     const perm = await requestPushPermission();
     setPushPermission(perm);
-    if (perm === 'granted') setPushOn(true);
+    if (perm === "granted") setPushOn(true);
   }
 
   function testAlertSound() {
@@ -140,16 +144,16 @@ export default function AdminPanel() {
   async function toggleShop() {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/shop', {
-        method: 'PATCH',
+      const res = await fetch("/api/admin/shop", {
+        method: "PATCH",
         headers: adminHeaders(pin),
         body: JSON.stringify({ isOpen: !isOpen }),
       });
-      if (!res.ok) throw new Error('No se pudo actualizar la tienda');
+      if (!res.ok) throw new Error("No se pudo actualizar la tienda");
       const data = await res.json();
       setIsOpen(data.is_open);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error');
+      setError(e instanceof Error ? e.message : "Error");
     } finally {
       setLoading(false);
     }
@@ -158,22 +162,25 @@ export default function AdminPanel() {
   async function updateOrderStatus(orderId: string, status: OrderStatus) {
     setBusyId(orderId);
     try {
-      const res = await fetch('/api/admin/orders', {
-        method: 'PATCH',
+      const res = await fetch("/api/admin/orders", {
+        method: "PATCH",
         headers: adminHeaders(pin),
         body: JSON.stringify({ id: orderId, status }),
       });
-      if (!res.ok) throw new Error('No se pudo actualizar el pedido');
+      if (!res.ok) throw new Error("No se pudo actualizar el pedido");
       if (isSearching) {
         await loadOrders(pin, { q: searchQuery });
-      } else if (status === 'picked_up' || status === 'cancelled') {
-        setTab('done');
-        await loadOrders(pin, { filter: 'done' });
+      } else if (status === "picked_up" || status === "cancelled") {
+        setTab("dispatched");
+        await loadOrders(pin, { filter: "dispatched" });
+      } else if (status === "preparing") {
+        setTab("production");
+        await loadOrders(pin, { filter: "production" });
       } else {
-        await loadOrders(pin, { filter: 'active' });
+        await loadOrders(pin, { filter: "incoming" });
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error');
+      setError(e instanceof Error ? e.message : "Error");
     } finally {
       setBusyId(null);
     }
@@ -197,51 +204,120 @@ export default function AdminPanel() {
   }, [searchQuery, tab, authed, pin, loadOrders, searchInput]);
 
   function clearSearch() {
-    setSearchInput('');
-    setSearchQuery('');
+    setSearchInput("");
+    setSearchQuery("");
   }
 
+  /** Realtime listeners para todos los cambios en la tabla orders */
   useEffect(() => {
     if (!authed || !pin) return;
-    const id = setInterval(() => refresh(), 15_000);
-    return () => clearInterval(id);
-  }, [authed, pin, refresh]);
 
-  /** Sonido + aviso cada 10 s (solo pedidos activos, sin búsqueda) */
+    const supabase = getSupabaseClient();
+    const channel = supabase
+      .channel("orders-changes")
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "orders" },
+        () => {
+          // Cuando se actualiza un pedido, recargamos los órdenes del tab actual
+          if (!isSearching) {
+            loadOrders(pin, { filter: tab }).catch(() => {});
+          }
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "orders" },
+        () => {
+          // Cuando se elimina un pedido, recargamos
+          if (!isSearching) {
+            loadOrders(pin, { filter: tab }).catch(() => {});
+          }
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [authed, pin, tab, isSearching, loadOrders]);
+
+  /** Realtime listener para estado de la tienda (abierta/cerrada) */
+  useEffect(() => {
+    if (!authed || !pin) return;
+
+    const supabase = getSupabaseClient();
+    const channel = supabase
+      .channel("shop-status")
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "shop_settings" },
+        (payload) => {
+          const data = payload.new as { is_open: boolean };
+          if (data) {
+            setIsOpen(data.is_open);
+          }
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [authed, pin]);
+
+  /** Realtime listener para nuevos pedidos (INSERT - se dispara inmediatamente) */
   useEffect(() => {
     if (!authed || !pin || isSearching) return;
 
-    async function pollNew() {
-      try {
-        const res = await fetch('/api/admin/orders?filter=active', {
-          headers: adminHeaders(pin),
-        });
-        if (!res.ok) return;
-        const data = await res.json();
-        handleNewOrdersDetected(data.orders ?? []);
-      } catch {
-        /* ignore */
-      }
-    }
+    const supabase = getSupabaseClient();
+    const channel = supabase
+      .channel("orders-new")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "orders" },
+        (payload) => {
+          const newOrder = payload.new as AdminOrder;
+          if (newOrder && newOrder.status === "placed") {
+            // Agregar el nuevo pedido a los conocidos para detectarlo
+            knownOrderIdsRef.current.add(newOrder.id);
+            handleNewOrdersDetected([newOrder]);
+            // También recargamos la lista de pedidos entrantes
+            if (tab === "incoming") {
+              loadOrders(pin, { filter: "incoming" }).catch(() => {});
+            }
+          }
+        },
+      )
+      .subscribe();
 
-    pollNew();
-    const id = setInterval(pollNew, 10_000);
-    return () => clearInterval(id);
-  }, [authed, pin, isSearching, handleNewOrdersDetected]);
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [authed, pin, isSearching, handleNewOrdersDetected, tab, loadOrders]);
 
   const groupedActive = useMemo(() => {
     const groups: { status: OrderStatus; orders: AdminOrder[] }[] = [];
-    for (const status of ACTIVE_STATUSES) {
-      const list = orders.filter((o) => o.status === status);
-      if (list.length) groups.push({ status, orders: list });
+    const activeStatusesForTab =
+      tab === "incoming"
+        ? ["placed"]
+        : tab === "production"
+          ? ["preparing"]
+          : [];
+    for (const status of activeStatusesForTab) {
+      const list = orders.filter((o) => o.status === (status as OrderStatus));
+      if (list.length)
+        groups.push({ status: status as OrderStatus, orders: list });
     }
     return groups;
-  }, [orders]);
+  }, [orders, tab]);
 
   if (!authed) {
     return (
-      <div className="mx-auto flex max-w-sm flex-col gap-4 p-6">
-        <h1 className="font-display text-2xl text-fire">Panel Callejeros</h1>
+      <div className="mx-auto flex max-w-sm flex-col gap-4 p-6 text-center">
+        <h1 className="font-display text-2xl text-fire">
+          Callejero Administrador
+        </h1>
         <p className="text-sm text-smoke">Pedidos, producción y tienda.</p>
         <input
           type="password"
@@ -249,11 +325,21 @@ export default function AdminPanel() {
           placeholder="PIN de admin"
           value={pin}
           onChange={(e) => setPin(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && pin) {
+              login();
+            }
+          }}
           className="rounded-xl border border-white/15 bg-ash px-3 py-2.5 text-cream"
         />
         {error && <p className="text-sm text-ember">{error}</p>}
-        <button type="button" className="btn-fire" disabled={loading} onClick={login}>
-          {loading ? 'Entrando…' : 'Entrar'}
+        <button
+          type="button"
+          className="btn-fire"
+          disabled={loading}
+          onClick={login}
+        >
+          {loading ? "Entrando…" : "Entrar"}
         </button>
       </div>
     );
@@ -262,21 +348,23 @@ export default function AdminPanel() {
   return (
     <div className="mx-auto flex min-h-dvh max-w-lg flex-col gap-4 px-4 pb-10 pt-6">
       <header className="text-center">
-        <h1 className="font-display text-2xl text-fire">Panel Callejeros</h1>
+        <h1 className="font-display text-2xl text-fire">
+          Callejero Administrador
+        </h1>
         <button
           type="button"
           onClick={refresh}
           disabled={loading}
           className="mt-1 text-xs text-smoke underline"
         >
-          {loading ? 'Actualizando…' : 'Actualizar'}
+          {loading ? "Actualizando…" : "Actualizar"}
         </button>
       </header>
 
       <section className="card-ash flex items-center justify-between gap-3 p-4">
         <div className="text-left">
           <p className="text-sm font-semibold">
-            Tienda {isOpen ? '🟢 Abierta' : '🔴 Cerrada'}
+            Tienda {isOpen ? "🟢 Abierta" : "🔴 Cerrada"}
           </p>
           <p className="text-xs text-smoke">Recibir pedidos nuevos</p>
         </div>
@@ -286,7 +374,7 @@ export default function AdminPanel() {
           disabled={loading}
           onClick={toggleShop}
         >
-          {isOpen ? 'Cerrar' : 'Abrir'}
+          {isOpen ? "Cerrar" : "Abrir"}
         </button>
       </section>
 
@@ -324,7 +412,7 @@ export default function AdminPanel() {
           >
             Probar sonido
           </button>
-          {pushPermission !== 'granted' && (
+          {pushPermission !== "granted" && (
             <button
               type="button"
               className="rounded-lg border border-white/15 px-3 py-1.5 text-xs"
@@ -335,8 +423,8 @@ export default function AdminPanel() {
           )}
         </div>
         <p className="text-xs text-smoke">
-          Deja esta pestaña abierta en el celular de cocina. El sonido suena al detectar
-          pedidos nuevos (estado “por aceptar”).
+          Deja esta pestaña abierta en el celular de cocina. El sonido suena al
+          detectar pedidos nuevos (estado “por aceptar”).
         </p>
       </section>
 
@@ -393,27 +481,40 @@ export default function AdminPanel() {
         )}
       </div>
       {searchInput.trim().length > 0 && searchInput.trim().length < 2 && (
-        <p className="text-center text-xs text-smoke">Escribe al menos 2 caracteres.</p>
+        <p className="text-center text-xs text-smoke">
+          Escribe al menos 2 caracteres.
+        </p>
       )}
 
-      <div className={`flex gap-2 ${isSearching ? 'pointer-events-none opacity-40' : ''}`}>
+      <div
+        className={`flex gap-2 ${isSearching ? "pointer-events-none opacity-40" : ""}`}
+      >
         <button
           type="button"
-          onClick={() => setTab('active')}
+          onClick={() => setTab("incoming")}
           className={`flex-1 rounded-xl py-2.5 text-sm font-semibold ${
-            tab === 'active' ? 'btn-fire' : 'border border-white/10 bg-ash'
+            tab === "incoming" ? "btn-fire" : "border border-white/10 bg-ash"
           }`}
         >
-          Activos
+          Entrantes
         </button>
         <button
           type="button"
-          onClick={() => setTab('done')}
+          onClick={() => setTab("production")}
           className={`flex-1 rounded-xl py-2.5 text-sm font-semibold ${
-            tab === 'done' ? 'btn-fire' : 'border border-white/10 bg-ash'
+            tab === "production" ? "btn-fire" : "border border-white/10 bg-ash"
           }`}
         >
-          Finalizados
+          Producción
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab("dispatched")}
+          className={`flex-1 rounded-xl py-2.5 text-sm font-semibold ${
+            tab === "dispatched" ? "btn-fire" : "border border-white/10 bg-ash"
+          }`}
+        >
+          Despachados
         </button>
       </div>
 
@@ -445,10 +546,12 @@ export default function AdminPanel() {
         </div>
       )}
 
-      {!isSearching && tab === 'active' && (
+      {!isSearching && (tab === "incoming" || tab === "production") && (
         <div className="flex flex-col gap-6">
           {groupedActive.length === 0 && (
-            <p className="text-center text-sm text-smoke">No hay pedidos activos.</p>
+            <p className="text-center text-sm text-smoke">
+              No hay pedidos activos.
+            </p>
           )}
           {groupedActive.map(({ status, orders: list }) => (
             <section key={status}>
@@ -470,7 +573,7 @@ export default function AdminPanel() {
         </div>
       )}
 
-      {!isSearching && tab === 'done' && (
+      {!isSearching && tab === "dispatched" && (
         <div className="flex flex-col gap-3">
           {orders.length === 0 && (
             <p className="text-center text-sm text-smoke">
