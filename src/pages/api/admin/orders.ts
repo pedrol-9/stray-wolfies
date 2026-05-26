@@ -94,10 +94,41 @@ export const PATCH: APIRoute = async ({ request }) => {
       .from("orders")
       .update({ status })
       .eq("id", id)
-      .select("id, code, status")
+      .select("id, code, status, total")
       .single();
 
     if (error) throw error;
+
+    // Si la orden pasó a 'picked_up' (despachada), registrar ingreso en el shift activo
+    if (status === "picked_up") {
+      try {
+        const { data: openShifts, error: shiftError } = await supabase
+          .from("shifts")
+          .select("id")
+          .eq("status", "open")
+          .order("opened_at", { ascending: false })
+          .limit(1);
+
+        const shift = openShifts && openShifts.length > 0 ? openShifts[0] : null;
+
+        if (!shiftError && shift && (shift as any).id) {
+          const shiftId = (shift as any).id;
+          const { error: txError } = await supabase.from("cash_transactions").insert({
+            shift_id: shiftId,
+            type: "income",
+            amount: (data as any).total,
+            description: `Ingreso — Orden ${(data as any).code}`,
+            order_id: (data as any).id,
+            created_by: null,
+          });
+          if (txError) console.error("Error inserting cash transaction:", txError.message || txError);
+        } else {
+          console.warn("No active shift found, skipping income transaction", shiftError || null);
+        }
+      } catch (txEx) {
+        console.error("Error handling income transaction:", txEx instanceof Error ? txEx.message : txEx);
+      }
+    }
 
     return new Response(JSON.stringify(data), {
       headers: { "Content-Type": "application/json" },

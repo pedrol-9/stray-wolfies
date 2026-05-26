@@ -53,3 +53,43 @@ create policy "shop_settings_read_anon"
   using (true);
 
 -- Sin políticas de insert/update para anon en orders → el cliente usa tu API con service_role
+
+-- Turnos y transacciones de caja
+create table if not exists public.shifts (
+  id uuid primary key default gen_random_uuid(),
+  opened_at timestamptz not null default now(),
+  closed_at timestamptz,
+  opened_by text,
+  closed_by text,
+  base_amount int not null default 0,
+  status text not null default 'open' check (status in ('open','closed'))
+);
+
+create table if not exists public.cash_transactions (
+  id uuid primary key default gen_random_uuid(),
+  shift_id uuid not null references public.shifts (id) on delete cascade,
+  type text not null check (type in ('base','income','expense')),
+  amount int not null,
+  description text,
+  order_id uuid,
+  created_at timestamptz not null default now(),
+  created_by text
+);
+
+create index if not exists cash_transactions_shift_idx on public.cash_transactions (shift_id);
+create index if not exists cash_transactions_created_at_idx on public.cash_transactions (created_at desc);
+
+-- Habilitar RLS para nuevas tablas
+alter table public.shifts enable row level security;
+alter table public.cash_transactions enable row level security;
+
+-- Políticas sencillas: sólo autenticados pueden leer/escribir mediante API administrativa (ajustar según roles)
+create policy "shifts_admin_all" on public.shifts for all
+  to authenticated
+  using (true)
+  with check (true);
+
+create policy "cash_admin_all" on public.cash_transactions for all
+  to authenticated
+  using (true)
+  with check (true);

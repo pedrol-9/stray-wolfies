@@ -19,27 +19,25 @@
   }
 
   body {
-    @apply min-h-dvh;
+    @apply min-h-dvh bg-void;
     background-image:
       radial-gradient(ellipse 80% 50% at 50% -10%, rgb(232 93 4 / 0.18), transparent),
       radial-gradient(circle at 100% 100%, rgb(193 18 31 / 0.08), transparent 40%);
   }
 }
 
-@layer utilities {
-  .font-display {
-    font-family: var(--font-display);
-  }
+@utility font-display {
+  font-family: var(--font-display);
+}
 
-  .text-fire {
-    @apply bg-linear-to-r from-gold via-flame to-ember bg-clip-text text-transparent;
-  }
+@utility text-fire {
+  @apply bg-linear-to-r from-gold via-flame to-ember bg-clip-text text-transparent;
+}
 
-  .btn-fire {
-    @apply rounded-xl bg-linear-to-r from-gold via-flame to-ember px-5 py-3 font-semibold text-void shadow-lg shadow-flame/25 transition hover:brightness-110 active:scale-[0.98];
-  }
+@utility btn-fire {
+  @apply rounded-xl bg-linear-to-r from-gold via-flame to-ember px-5 py-3 font-semibold text-void shadow-lg shadow-flame/25 transition hover:brightness-110 active:scale-[0.98];
+}
 
-  .card-ash {
-    @apply rounded-2xl border border-white/10 bg-ash/90 backdrop-blur-sm;
-  }
+@utility card-ash {
+  @apply rounded-2xl border border-white/10 bg-ash/90 backdrop-blur-sm;
 }

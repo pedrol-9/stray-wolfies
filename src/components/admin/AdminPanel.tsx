@@ -3,20 +3,16 @@ import {
   isPushEnabled,
   isSoundEnabled,
   requestPushPermission,
-  setPushEnabled,
-  setSoundEnabled,
   showOrderNotification,
 } from "../../lib/admin-notify-prefs";
 import { playNewOrderAlert } from "../../lib/order-alert-sound";
-import { ACTIVE_STATUSES, STATUS_LABELS } from "../../lib/order-status";
+import { STATUS_LABELS } from "../../lib/order-status";
 import { getSupabaseClient } from "../../lib/supabase-client";
-import {
-  formatOrderWhatsAppText,
-  getOwnerWhatsApp,
-  openWhatsAppToOwner,
-} from "../../lib/order-whatsapp";
 import type { AdminOrder, OrderStatus } from "../../types/admin-order";
 import OrderCard from "./OrderCard";
+import StoreShiftManager from "./StoreShiftManager";
+import AlertSettings from "./AlertSettings";
+import LatestOrderAlert from "./LatestOrderAlert";
 
 type Tab = "incoming" | "production" | "dispatched";
 
@@ -42,7 +38,33 @@ export default function AdminPanel() {
   const [latestNewOrder, setLatestNewOrder] = useState<AdminOrder | null>(null);
   const knownOrderIdsRef = useRef<Set<string>>(new Set());
   const alertsInitializedRef = useRef(false);
-  const ownerWhatsApp = getOwnerWhatsApp();
+
+  // Balance and shifts state
+  const [shift, setShift] = useState<any | null>(null);
+  const [totals, setTotals] = useState({ base: 0, income: 0, expense: 0 });
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [sendingReport, setSendingReport] = useState(false);
+
+  const loadBalance = useCallback(async (adminPin: string) => {
+    try {
+      const res = await fetch("/api/admin/shifts", {
+        headers: adminHeaders(adminPin),
+      });
+      if (!res.ok) throw new Error("No se pudo cargar el balance");
+      const data = await res.json();
+      setShift(data.shift || null);
+      setTotals(data.totals || { base: 0, income: 0, expense: 0 });
+      setTransactions(data.transactions || []);
+    } catch (e) {
+      console.error("loadBalance error", e);
+    }
+  }, []);
+
+  // Refresh balance when authenticated
+  useEffect(() => {
+    if (!authed || !pin) return;
+    loadBalance(pin).catch(() => {});
+  }, [authed, pin, loadBalance]);
 
   const loadShop = useCallback(async (adminPin: string) => {
     const res = await fetch("/api/admin/shop", {
@@ -52,6 +74,115 @@ export default function AdminPanel() {
     const data = await res.json();
     setIsOpen(data.is_open);
   }, []);
+
+  const openShiftFlow = useCallback(async (amount: number) => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/shifts", {
+        method: "POST",
+        headers: adminHeaders(pin),
+        body: JSON.stringify({ baseAmount: amount }),
+      });
+
+      // If there's already an open shift, load it and show close-shift UX
+      if (res.status === 409) {
+        const data = await res.json();
+        if (data.shift) {
+          setShift(data.shift);
+        }
+        setError(data.error || "Ya hay un turno abierto. Ciérralo primero.");
+        await loadBalance(pin);
+        await loadShop(pin);
+        return;
+      }
+
+      if (!res.ok) throw new Error("No se pudo abrir el turno");
+      await fetch("/api/admin/shop", {
+        method: "PATCH",
+        headers: adminHeaders(pin),
+        body: JSON.stringify({ isOpen: true }),
+      });
+      setError("");
+      await loadBalance(pin);
+      await loadShop(pin);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error");
+    } finally {
+      setLoading(false);
+    }
+  }, [pin, loadBalance, loadShop]);
+
+  const closeShiftFlow = useCallback(async () => {
+    if (!shift || !shift.id) {
+      setError("No hay turno activo para cerrar");
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/shifts", {
+        method: "PATCH",
+        headers: adminHeaders(pin),
+        body: JSON.stringify({ id: shift.id }),
+      });
+      if (!res.ok) throw new Error("No se pudo cerrar el turno");
+      await fetch("/api/admin/shop", {
+        method: "PATCH",
+        headers: adminHeaders(pin),
+        body: JSON.stringify({ isOpen: false }),
+      });
+      await loadBalance(pin);
+      await loadShop(pin);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error");
+    } finally {
+      setLoading(false);
+    }
+  }, [shift, pin, loadBalance, loadShop]);
+
+  const recordExpense = useCallback(async (amount: number, description: string) => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/expenses", {
+        method: "POST",
+        headers: adminHeaders(pin),
+        body: JSON.stringify({
+          amount: Math.round(amount),
+          description: description.trim(),
+          shiftId: shift?.id,
+        }),
+      });
+      if (!res.ok) throw new Error("No se pudo registrar gasto");
+      await loadBalance(pin);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error");
+    } finally {
+      setLoading(false);
+    }
+  }, [shift, pin, loadBalance]);
+
+  const sendReport = useCallback(async () => {
+    if (!shift || !shift.id) {
+      setError("No hay turno para reportar");
+      return;
+    }
+    setSendingReport(true);
+    try {
+      const res = await fetch("/api/admin/report", {
+        method: "POST",
+        headers: adminHeaders(pin),
+        body: JSON.stringify({ shiftId: shift.id }),
+      });
+      if (!res.ok) {
+        const bodyText = await res.text();
+        throw new Error("No se pudo enviar el reporte: " + bodyText);
+      }
+      setError("Reporte enviado correctamente");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error");
+    } finally {
+      setSendingReport(false);
+    }
+  }, [shift, pin]);
 
   const isSearching = searchQuery.trim().length >= 2;
 
@@ -361,103 +492,37 @@ export default function AdminPanel() {
         </button>
       </header>
 
-      <section className="card-ash flex items-center justify-between gap-3 p-4">
-        <div className="text-left">
-          <p className="text-sm font-semibold">
-            Tienda {isOpen ? "🟢 Abierta" : "🔴 Cerrada"}
-          </p>
-          <p className="text-xs text-smoke">Recibir pedidos nuevos</p>
-        </div>
-        <button
-          type="button"
-          className="btn-fire shrink-0 px-4 py-2 text-sm"
-          disabled={loading}
-          onClick={toggleShop}
-        >
-          {isOpen ? "Cerrar" : "Abrir"}
-        </button>
-      </section>
+      <StoreShiftManager
+        isOpen={isOpen}
+        shift={shift}
+        totals={totals}
+        transactions={transactions}
+        sendingReport={sendingReport}
+        loading={loading}
+        pin={pin}
+        toggleShop={toggleShop}
+        closeShiftFlow={closeShiftFlow}
+        openShiftFlow={openShiftFlow}
+        recordExpense={recordExpense}
+        sendReport={sendReport}
+        loadBalance={loadBalance}
+      />
 
-      <section className="card-ash flex flex-col gap-3 p-4 text-left text-sm">
-        <p className="font-semibold text-cream">Alertas de pedidos nuevos</p>
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={soundOn}
-            onChange={(e) => {
-              setSoundOn(e.target.checked);
-              setSoundEnabled(e.target.checked);
-            }}
-            className="accent-flame"
-          />
-          Sonido en el panel
-        </label>
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={pushOn}
-            onChange={(e) => {
-              setPushOn(e.target.checked);
-              setPushEnabled(e.target.checked);
-            }}
-            className="accent-flame"
-          />
-          Notificación del navegador
-        </label>
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            className="rounded-lg border border-white/15 px-3 py-1.5 text-xs"
-            onClick={testAlertSound}
-          >
-            Probar sonido
-          </button>
-          {pushPermission !== "granted" && (
-            <button
-              type="button"
-              className="rounded-lg border border-white/15 px-3 py-1.5 text-xs"
-              onClick={enablePush}
-            >
-              Activar avisos
-            </button>
-          )}
-        </div>
-        <p className="text-xs text-smoke">
-          Deja esta pestaña abierta en el celular de cocina. El sonido suena al
-          detectar pedidos nuevos (estado “por aceptar”).
-        </p>
-      </section>
+      <AlertSettings
+        soundOn={soundOn}
+        setSoundOn={setSoundOn}
+        pushOn={pushOn}
+        setPushOn={setPushOn}
+        pushPermission={pushPermission}
+        enablePush={enablePush}
+        testAlertSound={testAlertSound}
+      />
 
       {latestNewOrder && (
-        <div className="rounded-xl border border-gold/50 bg-gold/10 p-4 text-sm">
-          <p className="font-semibold text-cream">
-            🔔 Nuevo pedido {latestNewOrder.code}
-          </p>
-          <p className="text-smoke">{latestNewOrder.customer_name}</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {ownerWhatsApp && (
-              <button
-                type="button"
-                className="btn-fire px-3 py-1.5 text-xs"
-                onClick={() =>
-                  openWhatsAppToOwner(
-                    ownerWhatsApp,
-                    formatOrderWhatsAppText(latestNewOrder),
-                  )
-                }
-              >
-                WhatsApp
-              </button>
-            )}
-            <button
-              type="button"
-              className="rounded-lg border border-white/15 px-3 py-1.5 text-xs"
-              onClick={() => setLatestNewOrder(null)}
-            >
-              Cerrar
-            </button>
-          </div>
-        </div>
+        <LatestOrderAlert
+          latestNewOrder={latestNewOrder}
+          onClose={() => setLatestNewOrder(null)}
+        />
       )}
 
       <div className="relative">
