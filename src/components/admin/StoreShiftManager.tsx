@@ -54,6 +54,69 @@ export default function StoreShiftManager({
   const [expenseDesc, setExpenseDesc] = useState("");
   const [localError, setLocalError] = useState("");
   const [isBalanceCollapsed, setIsBalanceCollapsed] = useState(false);
+  const [showCloseModal, setShowCloseModal] = useState(false);
+  const [downloadCsv, setDownloadCsv] = useState(true);
+
+  const handleCloseClick = () => {
+    setShowCloseModal(true);
+  };
+
+  const generateAndDownloadCSV = () => {
+    if (!shift) return;
+
+    let csvRows = [];
+    csvRows.push("Reporte de Caja - Callejeros / Stray-Wolfies");
+    csvRows.push(`Turno ID:,${shift.id}`);
+    csvRows.push(`Apertura:,${shift.opened_at ? new Date(shift.opened_at).toLocaleString("es-CO") : ""}`);
+    csvRows.push(`Cierre:,${new Date().toLocaleString("es-CO")}`);
+    csvRows.push("");
+
+    csvRows.push("Resumen de Caja");
+    csvRows.push(`Base inicial:,${totals.base}`);
+    csvRows.push(`Ingresos:,${totals.income}`);
+    csvRows.push(`Gastos:,${totals.expense}`);
+    csvRows.push(`Balance final:,${totals.base + totals.income - totals.expense}`);
+    csvRows.push("");
+
+    csvRows.push("Detalle de Movimientos");
+    csvRows.push("Fecha,Tipo,Monto,Descripcion");
+
+    transactions.forEach((tx) => {
+      const dateStr = tx.created_at ? new Date(tx.created_at).toLocaleString("es-CO") : "";
+      const typeStr = tx.type === "base" ? "Base" : tx.type === "income" ? "Ingreso" : "Gasto";
+      const amountStr = tx.amount || 0;
+      const descStr = (tx.description || "").replace(/"/g, '""');
+      csvRows.push(`"${dateStr}","${typeStr}",${amountStr},"${descStr}"`);
+    });
+
+    const csvContent = "\uFEFF" + csvRows.join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+
+    const now = new Date();
+    const dd = String(now.getDate()).padStart(2, "0");
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    const yy = String(now.getFullYear()).slice(-2);
+    link.setAttribute("download", `Balance_caja_${dd}_${mm}_${yy}.csv`);
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleConfirmClose = async () => {
+    if (downloadCsv) {
+      try {
+        generateAndDownloadCSV();
+      } catch (err) {
+        console.error("Error generating CSV:", err);
+      }
+    }
+    setShowCloseModal(false);
+    await closeShiftFlow();
+  };
 
   const handleOpenShift = async () => {
     setLocalError("");
@@ -130,7 +193,7 @@ export default function StoreShiftManager({
                 type="button"
                 className="rounded-xl border border-ember/50 px-4 py-2 text-sm font-semibold text-ember transition hover:bg-ember/10 active:scale-[0.98]"
                 disabled={loading}
-                onClick={closeShiftFlow}
+                onClick={handleCloseClick}
               >
                 {loading ? "Cerrando…" : "Cerrar turno"}
               </button>
@@ -340,6 +403,47 @@ export default function StoreShiftManager({
             </>
           )}
         </section>
+      )}
+
+      {/* ── Modal de Confirmación de Cierre de Caja ── */}
+      {showCloseModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-void/85 p-4 backdrop-blur-md">
+          <div className="card-ash w-full max-w-sm flex flex-col gap-4 p-6 shadow-2xl border border-flame/30">
+            <h3 className="font-display text-lg text-fire text-center">Confirmar Cierre de Caja</h3>
+            <p className="text-sm text-smoke text-center leading-relaxed">
+              ¿Estás seguro de que deseas cerrar el turno activo y cambiar el estado de la tienda a cerrada?
+            </p>
+
+            <label className="flex items-center justify-center gap-2 cursor-pointer py-2 text-sm text-cream hover:text-gold transition">
+              <input
+                type="checkbox"
+                checked={downloadCsv}
+                onChange={(e) => setDownloadCsv(e.target.checked)}
+                className="accent-flame w-4 h-4 cursor-pointer"
+              />
+              Descargar reporte balance en CSV
+            </label>
+
+            <div className="flex gap-2 mt-2">
+              <button
+                type="button"
+                className="btn-fire flex-1 py-2.5 text-sm"
+                onClick={handleConfirmClose}
+                disabled={loading}
+              >
+                {loading ? "Cerrando…" : "Confirmar y Cerrar"}
+              </button>
+              <button
+                type="button"
+                className="rounded-xl border border-white/15 px-4 py-2.5 text-sm text-smoke hover:text-cream transition flex-1"
+                onClick={() => setShowCloseModal(false)}
+                disabled={loading}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
