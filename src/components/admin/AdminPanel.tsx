@@ -445,8 +445,8 @@ export default function AdminPanel() {
 
   if (!authed) {
     return (
-      <div className="mx-auto flex max-w-sm flex-col gap-4 p-6 text-center">
-        <h1 className="font-display text-2xl text-fire">
+      <div className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center gap-4 p-6 text-center">
+        <h1 className="font-display text-3xl text-fire animate-in fade-in duration-300">
           Callejero Administrador
         </h1>
         <p className="text-sm text-smoke">Pedidos, producción y tienda.</p>
@@ -461,12 +461,12 @@ export default function AdminPanel() {
               login();
             }
           }}
-          className="rounded-xl border border-white/15 bg-ash px-3 py-2.5 text-cream"
+          className="rounded-xl border border-white/15 bg-ash px-4 py-3 text-cream outline-none focus:border-flame focus:ring-2 focus:ring-flame/15 transition text-center text-lg tracking-widest font-bold"
         />
-        {error && <p className="text-sm text-ember">{error}</p>}
+        {error && <p className="text-sm font-semibold text-ember animate-shake">{error}</p>}
         <button
           type="button"
-          className="btn-fire"
+          className="btn-fire py-3 text-sm font-semibold cursor-pointer"
           disabled={loading}
           onClick={login}
         >
@@ -477,188 +477,201 @@ export default function AdminPanel() {
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-lg flex-col gap-4 px-4 pb-10 pt-6">
-      <header className="text-center">
-        <h1 className="font-display text-2xl text-fire">
+    <div className="mx-auto flex min-h-dvh max-w-7xl flex-col gap-6 px-4 pb-10 pt-6 md:px-8">
+      <header className="text-center mb-4">
+        <h1 className="font-display text-3xl md:text-4xl text-fire">
           Callejero Administrador
         </h1>
         <button
           type="button"
           onClick={refresh}
           disabled={loading}
-          className="mt-1 text-xs text-smoke underline"
+          className="mt-2 text-xs md:text-sm text-smoke underline hover:text-cream transition cursor-pointer"
         >
-          {loading ? "Actualizando…" : "Actualizar"}
+          {loading ? "Actualizando…" : "🔄 Actualizar panel"}
         </button>
       </header>
 
-      <StoreShiftManager
-        isOpen={isOpen}
-        shift={shift}
-        totals={totals}
-        transactions={transactions}
-        sendingReport={sendingReport}
-        loading={loading}
-        pin={pin}
-        toggleShop={toggleShop}
-        closeShiftFlow={closeShiftFlow}
-        openShiftFlow={openShiftFlow}
-        recordExpense={recordExpense}
-        sendReport={sendReport}
-        loadBalance={loadBalance}
-      />
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+        {/* Columna Izquierda: Gestión de Turno y Preferencias */}
+        <div className="md:col-span-5 space-y-6 md:sticky md:top-6 md:max-h-[calc(100vh-3rem)] md:overflow-y-auto scrollbar-thin">
+          <StoreShiftManager
+            isOpen={isOpen}
+            shift={shift}
+            totals={totals}
+            transactions={transactions}
+            sendingReport={sendingReport}
+            loading={loading}
+            pin={pin}
+            toggleShop={toggleShop}
+            closeShiftFlow={closeShiftFlow}
+            openShiftFlow={openShiftFlow}
+            recordExpense={recordExpense}
+            sendReport={sendReport}
+            loadBalance={loadBalance}
+          />
 
-      <AlertSettings
-        soundOn={soundOn}
-        setSoundOn={setSoundOn}
-        pushOn={pushOn}
-        setPushOn={setPushOn}
-        pushPermission={pushPermission}
-        enablePush={enablePush}
-        testAlertSound={testAlertSound}
-      />
-
-      {latestNewOrder && (
-        <LatestOrderAlert
-          latestNewOrder={latestNewOrder}
-          onClose={() => setLatestNewOrder(null)}
-        />
-      )}
-
-      <div className="relative">
-        <input
-          type="search"
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-          placeholder="Buscar por código, nombre o celular…"
-          className="w-full rounded-xl border border-white/15 bg-ash py-2.5 pl-4 pr-10 text-sm text-cream outline-none focus:border-flame"
-          aria-label="Buscar pedidos"
-        />
-        {searchInput.length > 0 && (
-          <button
-            type="button"
-            onClick={clearSearch}
-            className="absolute right-2 top-1/2 -translate-y-1/2 px-2 text-smoke hover:text-cream"
-            aria-label="Limpiar búsqueda"
-          >
-            ✕
-          </button>
-        )}
-      </div>
-      {searchInput.trim().length > 0 && searchInput.trim().length < 2 && (
-        <p className="text-center text-xs text-smoke">
-          Escribe al menos 2 caracteres.
-        </p>
-      )}
-
-      <div
-        className={`flex gap-2 ${isSearching ? "pointer-events-none opacity-40" : ""}`}
-      >
-        <button
-          type="button"
-          onClick={() => setTab("incoming")}
-          className={`flex-1 rounded-xl py-2.5 text-sm font-semibold ${
-            tab === "incoming" ? "btn-fire" : "border border-white/10 bg-ash"
-          }`}
-        >
-          Entrantes
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab("production")}
-          className={`flex-1 rounded-xl py-2.5 text-sm font-semibold ${
-            tab === "production" ? "btn-fire" : "border border-white/10 bg-ash"
-          }`}
-        >
-          Producción
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab("dispatched")}
-          className={`flex-1 rounded-xl py-2.5 text-sm font-semibold ${
-            tab === "dispatched" ? "btn-fire" : "border border-white/10 bg-ash"
-          }`}
-        >
-          Despachados
-        </button>
-      </div>
-
-      {error && (
-        <p className="rounded-xl border border-ember/40 bg-ember/10 px-3 py-2 text-center text-sm text-ember">
-          {error}
-        </p>
-      )}
-
-      {isSearching && (
-        <div className="flex flex-col gap-3">
-          <h2 className="text-sm font-semibold text-gold">
-            Resultados ({orders.length}) — “{searchQuery}”
-          </h2>
-          {orders.length === 0 ? (
-            <p className="text-center text-sm text-smoke">
-              No hay pedidos con ese código, nombre o celular.
-            </p>
-          ) : (
-            orders.map((order) => (
-              <OrderCard
-                key={order.id}
-                order={order}
-                busy={busyId === order.id}
-                onStatusChange={updateOrderStatus}
-              />
-            ))
-          )}
+          <AlertSettings
+            soundOn={soundOn}
+            setSoundOn={setSoundOn}
+            pushOn={pushOn}
+            setPushOn={setPushOn}
+            pushPermission={pushPermission}
+            enablePush={enablePush}
+            testAlertSound={testAlertSound}
+          />
         </div>
-      )}
 
-      {!isSearching && (tab === "incoming" || tab === "production") && (
-        <div className="flex flex-col gap-6">
-          {groupedActive.length === 0 && (
-            <p className="text-center text-sm text-smoke">
-              No hay pedidos activos.
-            </p>
-          )}
-          {groupedActive.map(({ status, orders: list }) => (
-            <section key={status}>
-              <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gold">
-                {STATUS_LABELS[status]} ({list.length})
-              </h2>
-              <div className="flex flex-col gap-3">
-                {list.map((order) => (
-                  <OrderCard
-                    key={order.id}
-                    order={order}
-                    busy={busyId === order.id}
-                    onStatusChange={updateOrderStatus}
-                  />
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
-      )}
-
-      {!isSearching && tab === "dispatched" && (
-        <div className="flex flex-col gap-3">
-          {orders.length === 0 && (
-            <p className="text-center text-sm text-smoke">
-              Aún no hay pedidos finalizados.
-            </p>
-          )}
-          {orders.map((order) => (
-            <OrderCard
-              key={order.id}
-              order={order}
-              busy={false}
-              onStatusChange={updateOrderStatus}
+        {/* Columna Derecha: Búsqueda y Pedidos */}
+        <div className="md:col-span-7 space-y-6">
+          {latestNewOrder && (
+            <LatestOrderAlert
+              latestNewOrder={latestNewOrder}
+              onClose={() => setLatestNewOrder(null)}
             />
-          ))}
-        </div>
-      )}
+          )}
 
-      <a href="/" className="text-center text-sm text-smoke underline">
-        Ir al menú de clientes
-      </a>
+          <div className="relative">
+            <input
+              type="search"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Buscar por código, nombre o celular…"
+              className="w-full rounded-xl border border-white/15 bg-ash py-3 pl-4 pr-10 text-sm text-cream outline-none focus:border-flame focus:ring-2 focus:ring-flame/15 transition"
+              aria-label="Buscar pedidos"
+            />
+            {searchInput.length > 0 && (
+              <button
+                type="button"
+                onClick={clearSearch}
+                className="absolute right-2 top-1/2 -translate-y-1/2 px-2 text-smoke hover:text-cream cursor-pointer"
+                aria-label="Limpiar búsqueda"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+          {searchInput.trim().length > 0 && searchInput.trim().length < 2 && (
+            <p className="text-center text-xs text-smoke">
+              Escribe al menos 2 caracteres.
+            </p>
+          )}
+
+          <div
+            className={`flex gap-2 ${isSearching ? "pointer-events-none opacity-40" : ""}`}
+          >
+            <button
+              type="button"
+              onClick={() => setTab("incoming")}
+              className={`flex-1 rounded-xl py-2.5 text-sm font-semibold transition cursor-pointer ${
+                tab === "incoming" ? "btn-fire" : "border border-white/10 bg-ash hover:bg-white/5"
+              }`}
+            >
+              Entrantes
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab("production")}
+              className={`flex-1 rounded-xl py-2.5 text-sm font-semibold transition cursor-pointer ${
+                tab === "production" ? "btn-fire" : "border border-white/10 bg-ash hover:bg-white/5"
+              }`}
+            >
+              Producción
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab("dispatched")}
+              className={`flex-1 rounded-xl py-2.5 text-sm font-semibold transition cursor-pointer ${
+                tab === "dispatched" ? "btn-fire" : "border border-white/10 bg-ash hover:bg-white/5"
+              }`}
+            >
+              Despachados
+            </button>
+          </div>
+
+          {error && (
+            <p className="rounded-xl border border-ember/40 bg-ember/10 px-3 py-2.5 text-center text-sm font-semibold text-ember animate-shake">
+              {error}
+            </p>
+          )}
+
+          {isSearching && (
+            <div className="flex flex-col gap-3">
+              <h2 className="text-sm font-semibold text-gold">
+                Resultados ({orders.length}) — “{searchQuery}”
+              </h2>
+              {orders.length === 0 ? (
+                <p className="text-center text-sm text-smoke">
+                  No hay pedidos con ese código, nombre o celular.
+                </p>
+              ) : (
+                <div className="flex flex-col gap-3 animate-in fade-in duration-200">
+                  {orders.map((order) => (
+                    <OrderCard
+                      key={order.id}
+                      order={order}
+                      busy={busyId === order.id}
+                      onStatusChange={updateOrderStatus}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {!isSearching && (tab === "incoming" || tab === "production") && (
+            <div className="flex flex-col gap-6">
+              {groupedActive.length === 0 && (
+                <p className="text-center text-sm text-smoke py-8 card-ash bg-ash/40 border-dashed">
+                  No hay pedidos activos en esta pestaña.
+                </p>
+              )}
+              {groupedActive.map(({ status, orders: list }) => (
+                <section key={status} className="animate-in fade-in duration-200">
+                  <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gold flex items-center gap-2">
+                    <span className="size-2 rounded-full bg-gold animate-pulse"></span>
+                    {STATUS_LABELS[status]} ({list.length})
+                  </h2>
+                  <div className="flex flex-col gap-3">
+                    {list.map((order) => (
+                      <OrderCard
+                        key={order.id}
+                        order={order}
+                        busy={busyId === order.id}
+                        onStatusChange={updateOrderStatus}
+                      />
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          )}
+
+          {!isSearching && tab === "dispatched" && (
+            <div className="flex flex-col gap-3 animate-in fade-in duration-200">
+              {orders.length === 0 && (
+                <p className="text-center text-sm text-smoke py-8 card-ash bg-ash/40 border-dashed">
+                  Aún no hay pedidos finalizados hoy.
+                </p>
+              )}
+              {orders.map((order) => (
+                <OrderCard
+                  key={order.id}
+                  order={order}
+                  busy={false}
+                  onStatusChange={updateOrderStatus}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="mt-8 border-t border-white/5 pt-4 text-center">
+        <a href="/" className="text-sm text-smoke hover:text-cream underline transition">
+          ← Ir al menú de clientes
+        </a>
+      </div>
     </div>
   );
 }
