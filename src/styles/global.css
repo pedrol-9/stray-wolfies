@@ -44,36 +44,41 @@
 
 /* Global scrollbar style for dark theme */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: var(--color-void);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(244, 140, 6, 0.2);
+  background: var(--color-flame);
   border-radius: 9999px;
-  border: 2px solid var(--color-void);
+  border: 1px solid var(--color-void);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(232, 93, 4, 0.5);
+  background: var(--color-gold);
 }
 
 /* Custom scrollbar utility for scrollable panels */
 @utility scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-flame) transparent;
+
   &::-webkit-scrollbar {
-    width: 5px;
-    height: 5px;
+    width: 4px;
+    height: 4px;
   }
   &::-webkit-scrollbar-track {
-    background: transparent;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 9999px;
   }
   &::-webkit-scrollbar-thumb {
-    background: rgba(244, 140, 6, 0.25);
+    background: var(--color-flame);
     border-radius: 9999px;
   }
   &::-webkit-scrollbar-thumb:hover {
-    background: rgba(232, 93, 4, 0.6);
+    background: var(--color-gold);
   }
 }
+
 

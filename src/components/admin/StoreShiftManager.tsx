@@ -337,7 +337,7 @@ export default function StoreShiftManager({
               {transactions.length > 0 && (
                 <div className="flex flex-col gap-1">
                   <p className="text-xs font-semibold text-smoke">Movimientos del turno</p>
-                  <div className="max-h-48 overflow-y-auto rounded-xl border border-white/10 bg-void/40">
+                  <div className="max-h-48 overflow-y-auto scrollbar-thin rounded-xl border border-white/10 bg-void/40">
                     {transactions.map((tx: any, i: number) => (
                       <div
                         key={tx.id || i}
