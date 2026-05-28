@@ -41,3 +41,39 @@
 @utility card-ash {
   @apply rounded-2xl border border-white/10 bg-ash/90 backdrop-blur-sm;
 }
+
+/* Global scrollbar style for dark theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-void);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(244, 140, 6, 0.2);
+  border-radius: 9999px;
+  border: 2px solid var(--color-void);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(232, 93, 4, 0.5);
+}
+
+/* Custom scrollbar utility for scrollable panels */
+@utility scrollbar-thin {
+  &::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(244, 140, 6, 0.25);
+    border-radius: 9999px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: rgba(232, 93, 4, 0.6);
+  }
+}
+
