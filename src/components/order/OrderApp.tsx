@@ -815,6 +815,14 @@ export default function OrderApp() {
           </div>
         </div>
       )}
+      <footer className="mt-12 border-t border-white/5 pt-6 text-center">
+        <a
+          href="/admin"
+          className="text-xs text-smoke hover:text-gold transition underline"
+        >
+          ¿Eres del equipo de trabajo? Entrar al panel de control
+        </a>
+      </footer>
     </div>
   );
 }

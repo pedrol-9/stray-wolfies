@@ -477,7 +477,7 @@ export default function AdminPanel() {
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-7xl flex-col gap-6 px-4 pb-10 pt-6 md:px-8">
+    <div className="mx-auto flex min-h-dvh max-w-7xl flex-col gap-6 px-4 pb-10 pt-6 lg:px-8">
       <header className="text-center mb-4">
         <h1 className="font-display text-3xl md:text-4xl text-fire">
           Callejero Administrador
@@ -492,9 +492,9 @@ export default function AdminPanel() {
         </button>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Columna Izquierda: Gestión de Turno y Preferencias */}
-        <div className="md:col-span-5 space-y-6 md:sticky md:top-6 md:max-h-[calc(100vh-3rem)] md:overflow-y-auto scrollbar-thin">
+        <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto scrollbar-thin">
           <StoreShiftManager
             isOpen={isOpen}
             shift={shift}
@@ -523,7 +523,7 @@ export default function AdminPanel() {
         </div>
 
         {/* Columna Derecha: Búsqueda y Pedidos */}
-        <div className="md:col-span-7 space-y-6">
+        <div className="lg:col-span-7 space-y-6">
           {latestNewOrder && (
             <LatestOrderAlert
               latestNewOrder={latestNewOrder}
@@ -567,7 +567,7 @@ export default function AdminPanel() {
                 tab === "incoming" ? "btn-fire" : "border border-white/10 bg-ash hover:bg-white/5"
               }`}
             >
-              Entrantes
+              In
             </button>
             <button
               type="button"
@@ -576,7 +576,7 @@ export default function AdminPanel() {
                 tab === "production" ? "btn-fire" : "border border-white/10 bg-ash hover:bg-white/5"
               }`}
             >
-              Producción
+              On
             </button>
             <button
               type="button"
@@ -585,7 +585,7 @@ export default function AdminPanel() {
                 tab === "dispatched" ? "btn-fire" : "border border-white/10 bg-ash hover:bg-white/5"
               }`}
             >
-              Despachados
+              Out
             </button>
           </div>
 
