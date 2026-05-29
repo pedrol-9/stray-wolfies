@@ -477,7 +477,7 @@ export default function AdminPanel() {
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-7xl flex-col gap-6 px-4 pb-10 pt-6 lg:px-8">
+    <div className="mx-auto flex min-h-dvh max-w-7xl flex-col gap-6 px-4 pb-10 pt-6 lg:px-8 relative z-10">
       <header className="text-center mb-4">
         <h1 className="font-display text-3xl md:text-4xl text-fire">
           Callejero Administrador
@@ -671,6 +671,40 @@ export default function AdminPanel() {
         <a href="/" className="text-sm text-smoke hover:text-cream underline transition">
           ← Ir al menú de clientes
         </a>
+      </div>
+
+      {/* Grill Fire & Embers Background Effect */}
+      <div className="fixed bottom-0 left-0 right-0 h-[40vh] pointer-events-none overflow-hidden z-[-1] select-none">
+        {/* Warm Grill Glow */}
+        <div className="absolute inset-0 bg-gradient-to-t from-ember/35 via-flame/15 to-transparent blur-md"></div>
+        {/* Heat Wave Pulse */}
+        <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-flame/40 via-gold/15 to-transparent opacity-60 mix-blend-screen filter blur-xs animate-pulse duration-[3s]"></div>
+        
+        {/* Sparks / Embers */}
+        <div className="absolute inset-0">
+          {[...Array(20)].map((_, i) => {
+            const size = Math.random() * 3 + 2; // 2px to 5px
+            const left = Math.random() * 100; // 0% to 100%
+            const duration = Math.random() * 4 + 4; // 4s to 8s
+            const delay = Math.random() * -8; // start immediately
+            const color = i % 3 === 0 ? 'bg-gold' : i % 3 === 1 ? 'bg-flame' : 'bg-ember';
+            
+            return (
+              <div
+                key={i}
+                className={`absolute bottom-0 rounded-full opacity-0 animate-ember ${color}`}
+                style={{
+                  left: `${left}%`,
+                  width: `${size}px`,
+                  height: `${size}px`,
+                  animationDuration: `${duration}s`,
+                  animationDelay: `${delay}s`,
+                  filter: 'blur(0.5px)',
+                }}
+              />
+            );
+          })}
+        </div>
       </div>
     </div>
   );
