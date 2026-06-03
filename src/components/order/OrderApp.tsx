@@ -251,10 +251,18 @@ export default function OrderApp() {
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-7xl flex-col px-4 pb-8 pt-6 md:px-8">
-      <header className="mb-8 text-center">
-        <h1 className="font-display text-4xl md:text-6xl text-fire transition duration-300">Callejeros</h1>
-        <p className="mt-2 text-sm md:text-base text-smoke">Sabor brutal directo al fuego</p>
-        <p className="mt-2 text-xs md:text-sm text-smoke">
+      <header className="mb-8 text-center flex flex-col items-center">
+        <div className="relative mb-4 group select-none">
+          {/* Subtle background fire glow under the logo */}
+          <div className="absolute -inset-1 bg-gradient-to-r from-ember via-flame to-gold rounded-full blur-xl opacity-20 group-hover:opacity-35 transition duration-500"></div>
+          <img 
+            src="/logo.jpg" 
+            alt="Callejeros Logo" 
+            className="relative size-32 md:size-40 rounded-full border border-white/10 object-cover shadow-2xl shadow-flame/15 group-hover:scale-105 transition-all duration-300"
+          />
+        </div>
+        <p className="mt-2 text-sm md:text-base text-smoke font-semibold uppercase tracking-wider">Sabor brutal directo al fuego</p>
+        <p className="mt-1 text-xs md:text-sm text-smoke/70">
           Horario habitual: {shop?.scheduleLabel ?? SCHEDULE_LABEL}
         </p>
       </header>
@@ -274,8 +282,12 @@ export default function OrderApp() {
       {step === "done" ? (
         <div className="mx-auto w-full max-w-lg animate-in fade-in slide-in-from-bottom-4 duration-300">
           <div className="card-ash flex flex-col items-center gap-6 p-8 text-center shadow-xl shadow-flame/5 border-flame/20">
-            <div className="size-16 rounded-full bg-linear-to-r from-gold to-flame flex items-center justify-center text-4xl shadow-inner animate-bounce">
-              🐺
+            <div className="relative size-24 md:size-28 rounded-full border-2 border-gold/40 shadow-lg shadow-flame/10 overflow-hidden animate-bounce select-none">
+              <img 
+                src="/logo.jpg" 
+                alt="Callejeros Success" 
+                className="size-full object-cover"
+              />
             </div>
             <h2 className="font-display text-3xl text-fire">¡Pedido recibido!</h2>
             <div className="w-full rounded-xl bg-void/50 border border-white/5 py-4 px-6">
