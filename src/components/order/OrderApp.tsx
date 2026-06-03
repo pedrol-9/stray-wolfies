@@ -14,8 +14,9 @@ import {
 } from "../../lib/meat-style";
 import type { MenuItem } from "../../types/menu";
 import type { CartLine, CustomerInfo } from "../../types/order";
-import MeatStyleSplitControl from "./MeatStyleSplitControl";
+import PremiumMeatStyleSelector from "./PremiumMeatStyleSelector";
 import QuantityStepper from "./QuantityStepper";
+import FireBackground from "./FireBackground";
 
 type Step = "menu" | "customize" | "cart" | "checkout" | "done";
 
@@ -48,6 +49,9 @@ export default function OrderApp() {
   });
   const [addonMeatSplits, setAddonMeatSplits] = useState<
     Record<string, MeatStyleSplit>
+  >({});
+  const [expandedAddons, setExpandedAddons] = useState<
+    Record<string, boolean>
   >({});
   const [quantity, setQuantity] = useState(1);
   const [drinkQuantities, setDrinkQuantities] = useState<
@@ -150,6 +154,7 @@ export default function OrderApp() {
     setAddonMeatSplits(splits);
     setQuantity(1);
     setMainMeatSplit(defaultMeatSplit(1));
+    setExpandedAddons({});
     setStep("customize");
   }
 
@@ -395,7 +400,7 @@ export default function OrderApp() {
               onClick={() => setStep("menu")}
             >
               <div 
-                className="w-full max-w-lg card-ash p-5 md:p-6 shadow-2xl shadow-flame/15 max-h-[90vh] overflow-y-auto scrollbar-thin animate-in zoom-in-95 duration-200"
+                className="w-full max-w-lg card-ash p-4 sm:p-5 md:p-6 shadow-2xl shadow-flame/15 max-h-[90vh] overflow-y-auto scrollbar-thin animate-in zoom-in-95 duration-200"
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="flex items-center justify-between border-b border-white/5 pb-3 mb-4">
@@ -409,42 +414,53 @@ export default function OrderApp() {
                   </button>
                 </div>
                 
-                <div className="flex items-center justify-between gap-3 bg-void/30 p-3.5 rounded-xl border border-white/5 mb-4">
-                  <div className="min-w-0">
-                    <h2 className="font-display text-lg md:text-xl text-cream">
-                      {editing.name}
-                    </h2>
-                    <p className="font-semibold text-gold text-sm">
-                      {formatCOP(editing.price)} c/u
-                    </p>
+                <div id="selected-product-card" className={`relative overflow-hidden flex flex-col gap-4 bg-void/30 p-3.5 rounded-xl border border-white/5 mb-4 transition-all duration-300 ${
+                  quantity > 0 ? 'bg-void/60 shadow-lg shadow-flame/10' : 'bg-void/40'
+                }`}>
+                  {quantity > 0 && <FireBackground />}
+                  <div className="relative z-10 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <h2 className="font-display text-lg md:text-xl text-cream">
+                        {editing.name}
+                      </h2>
+                      <p className="font-semibold text-gold text-sm">
+                        {formatCOP(editing.price)} c/u
+                      </p>
+                    </div>
+                    {itemNeedsMeatStyle(editing) ? (
+                      <div className="text-right">
+                        <div className="text-xs text-smoke uppercase tracking-wider mb-1">Cantidad</div>
+                        <div className="text-2xl font-display text-gold">{quantity}</div>
+                      </div>
+                    ) : (
+                      <QuantityStepper
+                        min={1}
+                        value={quantity}
+                        onChange={setMainQuantity}
+                      />
+                    )}
                   </div>
-                  <QuantityStepper
-                    min={1}
-                    value={quantity}
-                    onChange={setMainQuantity}
-                  />
+
+                  {itemNeedsMeatStyle(editing) && (
+                    <div className="mt-2 pt-4 border-t border-white/5 relative z-10 w-full">
+                      <PremiumMeatStyleSelector
+                        id="main-meat-style-selector"
+                        split={mainMeatSplit}
+                        onChange={(split) => {
+                          setMainMeatSplit(split);
+                          setQuantity(meatSplitSumSafe(split));
+                        }}
+                        minSum={1}
+                        plain={true}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-4">
-                  {itemNeedsMeatStyle(editing) && (
-                    <fieldset className="rounded-xl border border-white/5 bg-void/20 p-4">
-                      <legend className="px-2 text-xs font-semibold text-cream uppercase tracking-wider">
-                        Estilo de la carne / chorizo
-                        <span className="text-ember"> *</span>
-                      </legend>
-                      <p className="mb-3 mt-1 text-xs text-smoke">
-                        Reparte las {quantity} unidades entre picante y tradicional.
-                      </p>
-                      <MeatStyleSplitControl
-                        total={quantity}
-                        split={mainMeatSplit}
-                        onChange={setMainMeatSplit}
-                      />
-                    </fieldset>
-                  )}
 
                   {editing.category === "plato" && (
-                    <fieldset className="rounded-xl border border-white/5 bg-void/20 p-4">
+                    <fieldset className="rounded-xl border border-white/5 bg-void/20 p-3 sm:p-4 animate-in fade-in duration-200">
                       <legend className="px-2 text-xs font-semibold text-cream uppercase tracking-wider">
                         Adicionales (Opcional)
                       </legend>
@@ -454,21 +470,43 @@ export default function OrderApp() {
                           const active = qty > 0;
                           const addonSplit =
                             addonMeatSplits[addon.id] ?? defaultMeatSplit(0);
+
+                          const isExtraChorizo = addon.id === "extra-chorizo-carne";
+                          const expanded = !isExtraChorizo || (expandedAddons[addon.id] ?? false);
+
                           return (
                             <div
                               key={addon.id}
-                              className={`rounded-lg border px-3 py-2.5 transition-all duration-200 ${
+                              id={isExtraChorizo ? "addon-card-extra-chorizo" : undefined}
+                              className={`relative overflow-hidden rounded-lg border transition-all duration-200 ${
                                 active 
-                                  ? "border-flame bg-flame/10 shadow-lg shadow-flame/5" 
+                                  ? "border-flame bg-void/60 shadow-lg shadow-flame/10" 
                                   : "border-white/5 bg-ash/50 hover:border-white/15"
                               }`}
                             >
-                              <div className="flex items-center justify-between gap-2">
+                              
+                              <div 
+                                id={isExtraChorizo ? "addon-toggle-trigger-extra-chorizo" : undefined}
+                                onClick={isExtraChorizo ? () => {
+                                  setExpandedAddons((prev) => ({
+                                    ...prev,
+                                    [addon.id]: !prev[addon.id],
+                                  }));
+                                } : undefined}
+                                className={`flex items-center justify-between gap-2 p-2.5 relative z-10 ${
+                                  isExtraChorizo ? "cursor-pointer select-none hover:bg-white/5 transition-colors" : ""
+                                }`}
+                              >
                                 <div className="min-w-0 flex-1">
                                   <p className="text-sm font-semibold text-cream flex items-center gap-1.5">
                                     {addon.name}
                                     {addon.id === "enchula-choriarepa" && (
                                       <span className="text-gold animate-pulse">🔥</span>
+                                    )}
+                                    {isExtraChorizo && (
+                                      <span className="text-xs text-smoke font-normal transition-transform duration-200">
+                                        {expanded ? '▲' : '▼'}
+                                      </span>
                                     )}
                                   </p>
                                   <p className="text-xs font-semibold text-gold mt-0.5">
@@ -483,25 +521,37 @@ export default function OrderApp() {
                                     )}
                                   </p>
                                 </div>
-                                <QuantityStepper
-                                  size="sm"
-                                  min={0}
-                                  value={qty}
-                                  onChange={(v) => setAddonQuantity(addon, v)}
-                                />
-                              </div>
-                              {active && itemNeedsMeatStyle(addon) && (
-                                <div className="mt-2.5 pt-2.5 border-t border-white/5">
-                                  <MeatStyleSplitControl
-                                    total={qty}
-                                    split={addonSplit}
-                                    onChange={(split) =>
-                                      setAddonMeatSplits((prev) => ({
-                                        ...prev,
-                                        [addon.id]: split,
-                                      }))
-                                    }
+                                {!itemNeedsMeatStyle(addon) && (
+                                  <QuantityStepper
+                                    size="sm"
+                                    min={0}
+                                    value={qty}
+                                    onChange={(v) => setAddonQuantity(addon, v)}
                                   />
+                                )}
+                              </div>
+                              
+                              {itemNeedsMeatStyle(addon) && expanded && (
+                                <div className="px-3 pb-3 border-t border-white/5 relative z-10 animate-in fade-in slide-in-from-top-1 duration-150">
+                                  <div className="mt-3">
+                                    <PremiumMeatStyleSelector
+                                      id={isExtraChorizo ? "addon-selector-extra-chorizo" : undefined}
+                                      split={addonSplit}
+                                      onChange={(split) => {
+                                        setAddonMeatSplits((prev) => ({
+                                          ...prev,
+                                          [addon.id]: split,
+                                        }));
+                                        setAddonQuantities((prev) => ({
+                                          ...prev,
+                                          [addon.id]: meatSplitSumSafe(split),
+                                        }));
+                                      }}
+                                      minSum={0}
+                                      plain={true}
+                                      vertical={true}
+                                    />
+                                  </div>
                                 </div>
                               )}
                             </div>

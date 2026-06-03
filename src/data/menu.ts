@@ -56,7 +56,7 @@ export const menu: MenuSection[] = [
     items: [
       {
         id: 'extra-chorizo-carne',
-        name: 'Adicional chorizo o carne',
+        name: 'Adicional chorizo',
         description: 'Picante o tradicional. Para hamburguesa o platos con chorizo.',
         price: 7000,
         category: 'adicional',
