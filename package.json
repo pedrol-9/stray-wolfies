@@ -29,5 +29,8 @@
     "deploymentEnabled": {
       "dev": false
     }
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.2"
   }
 }

@@ -9,11 +9,11 @@ describe('order totals', () => {
   const mods = { estilo: ['picante'] };
 
   it('multiplies main dish price by quantity', () => {
-    assert.equal(calcLineTotal(choriarepa, 2, mods), 16_000);
+    assert.equal(calcLineTotal(choriarepa, 2, mods), 20_000);
   });
 
   it('multiplies addon price by quantity', () => {
-    assert.equal(calcLineTotal(extraQueso, 3, {}), 3_000);
+    assert.equal(calcLineTotal(extraQueso, 3, {}), 4_500);
   });
 
   it('sums cart lines including multiple addon qty', () => {
@@ -21,12 +21,12 @@ describe('order totals', () => {
       newCartLine(choriarepa, 1, mods),
       newCartLine(extraQueso, 2, mods),
     ];
-    assert.equal(cartSubtotal(lines), 10_000);
+    assert.equal(cartSubtotal(lines), 13_000);
   });
 
   it('adicionales list respects plato', () => {
     const forChori = getAdicionalesFor('choriarepa');
-    assert.ok(forChori.some((a) => a.id === 'enchula-choriarepa'));
-    assert.ok(forChori.length >= 3);
+    assert.ok(forChori.some((a) => a.id === 'extra-queso'));
+    assert.ok(forChori.length >= 5);
   });
 });

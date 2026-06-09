@@ -26,7 +26,7 @@ describe('meat style split', () => {
       lines.find((l) => l.modifierLabels.includes('Tradicional'))?.quantity,
       1,
     );
-    assert.equal(previewItemTotal(choriarepa, 2, { picante: 1, tradicional: 1 }), 16_000);
+    assert.equal(previewItemTotal(choriarepa, 2, { picante: 1, tradicional: 1 }), 20_000);
   });
 
   it('allows 3 picantes for extra chorizo', () => {

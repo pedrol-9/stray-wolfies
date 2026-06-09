@@ -1,7 +1,7 @@
-import type { MenuSection } from '../types/menu';
+import type { MenuSection, ModifierGroup } from '../types/menu';
 
 /** Picante / tradicional — obligatorio en platos con chorizo o carne */
-export const MEAT_STYLE_GROUP = {
+export const MEAT_STYLE_GROUP: ModifierGroup = {
   id: 'estilo',
   label: 'Estilo del chorizo / carne',
   required: true,
@@ -11,7 +11,7 @@ export const MEAT_STYLE_GROUP = {
     { id: 'picante', label: 'Picante', price: 0 },
     { id: 'tradicional', label: 'Tradicional', price: 0 },
   ],
-} as const;
+};
 
 export const menu: MenuSection[] = [
   {
@@ -19,32 +19,60 @@ export const menu: MenuSection[] = [
     title: 'Platos',
     items: [
       {
+        id: 'chorizo-triste',
+        name: 'Chorizo Triste',
+        tagline: 'Simple pero potente',
+        description: 'Un chorizo.',
+        price: 7000,
+        category: 'plato',
+        modifierGroups: [MEAT_STYLE_GROUP],
+      },
+      {
         id: 'choriarepa',
-        name: 'Choriarepa',
-        tagline: 'Clásico que nunca falla',
+        name: 'Epa La Arepa',
+        tagline: 'El clásico de la calle',
+        description: 'Chorizo, arepa y limón, nada más.',
+        price: 10000,
+        category: 'plato',
+        modifierGroups: [MEAT_STYLE_GROUP],
+      },
+      {
+        id: 'enchularepa',
+        name: 'Enchularepa',
+        tagline: 'Al estilo mexicano con sabor de calle',
         description:
-          'Chorizo picante o tradicional (16 cm) + arepa blanca con queso + limón.',
-        price: 8000,
+          'Como un taco pero con arepa, chorizo, queso, cebolla caramelizada, ripio de papa y salsas.',
+        price: 13000,
         category: 'plato',
         modifierGroups: [MEAT_STYLE_GROUP],
       },
       {
         id: 'choriperro',
-        name: 'Choriperro',
-        tagline: 'El perro callejero más salvaje de la manada',
+        name: 'El Callejero',
+        tagline: 'El propio perro callejero',
         description:
-          'Chorizo picante o tradicional (16 cm) + pan brioche + papa fosforito + cebolla caramelizada + queso + salsas de la casa.',
-        price: 12000,
+          'Viene con pan brioche, chorizo, cebolla caramelizada, ripio de papa, queso y salsas de la casa.',
+        price: 13000,
         category: 'plato',
         modifierGroups: [MEAT_STYLE_GROUP],
       },
       {
         id: 'hamburguesa',
-        name: 'Hamburguesa',
-        tagline: 'La bestia que viene a devorarlo todo',
+        name: 'La Vagabunda',
+        tagline: 'La reina de la casa',
         description:
-          '160 g de carne de chorizo picante o tradicional + pan brioche a la plancha + doble queso + cebolla caramelizada + tomate verde + salsas de la casa.',
-        price: 14000,
+          'Prima del callejero, hamburguesa que viene con pan brioche, 160 gr de carne de cerdo, cebolla caramelizada, ripio de papa, mix de quesos, tomate verde y salsas de la casa.',
+        price: 15000,
+        category: 'plato',
+        modifierGroups: [MEAT_STYLE_GROUP],
+      },
+      {
+        id: 'burguearepa-vagabunda',
+        name: 'Burguearepa Vagabunda',
+        tagline: 'La versión más criolla',
+        description:
+          'Hermana de la vagabunda, es más criollita lo mismo que ella pero con arepa. Arepaburguer que viene con arepa, 160 gr de carne de cerdo, cebolla caramelizada, ripio de papa, mix de quesos, tomate verde y salsas de la casa.',
+        price: 15000,
         category: 'plato',
         modifierGroups: [MEAT_STYLE_GROUP],
       },
@@ -55,29 +83,50 @@ export const menu: MenuSection[] = [
     title: 'Adicionales',
     items: [
       {
+        id: 'extra-carne-hamburguesa',
+        name: 'Adicional carne de hamburguesa',
+        description: 'Picante o tradicional.',
+        price: 7500,
+        category: 'adicional',
+        modifierGroups: [MEAT_STYLE_GROUP],
+      },
+      {
         id: 'extra-chorizo-carne',
-        name: 'Adicional chorizo',
-        description: 'Picante o tradicional. Para hamburguesa o platos con chorizo.',
+        name: 'Adicional de chorizo',
+        description: 'Picante o tradicional.',
         price: 7000,
         category: 'adicional',
         modifierGroups: [MEAT_STYLE_GROUP],
-        appliesTo: ['choriarepa', 'choriperro', 'hamburguesa'],
+      },
+      {
+        id: 'extra-tocineta',
+        name: 'Adicional de tocineta ahumada',
+        price: 3000,
+        category: 'adicional',
       },
       {
         id: 'extra-queso',
         name: 'Adicional de queso',
-        price: 1000,
+        price: 1500,
         category: 'adicional',
-        appliesTo: ['choriarepa', 'choriperro', 'hamburguesa'],
       },
       {
-        id: 'enchula-choriarepa',
-        name: 'Enchula tu Choriarepa',
-        description:
-          'Queso, papa fosforito, cebolla caramelizada y salsas de la casa.',
-        price: 2000,
+        id: 'extra-cebolla',
+        name: 'Adicional de cebolla caramelizada',
+        price: 1000,
         category: 'adicional',
-        appliesTo: ['choriarepa'],
+      },
+      {
+        id: 'extra-pepinillos',
+        name: 'Adicional de pepinillos agridulces',
+        price: 1000,
+        category: 'adicional',
+      },
+      {
+        id: 'extra-jalapenos',
+        name: 'Adicional de jalapeños',
+        price: 1000,
+        category: 'adicional',
       },
     ],
   },
@@ -85,19 +134,14 @@ export const menu: MenuSection[] = [
     id: 'bebidas',
     title: 'Gaseosas',
     items: [
-      { id: 'agua-pequena', name: 'Agua pequeña', price: 1000, category: 'bebida' },
-      {
-        id: 'agua-personal',
-        name: 'Agua personal',
-        description: 'Natural o con gas',
-        price: 2500,
-        category: 'bebida',
-      },
-      { id: 'jugo-hit', name: 'Jugo Hit', price: 3500, category: 'bebida' },
-      { id: 'coca-personal', name: 'Coca-Cola personal', price: 3500, category: 'bebida' },
-      { id: 'quatro-personal', name: 'Quatro personal', price: 3500, category: 'bebida' },
-      { id: 'coca-1l', name: 'Coca-Cola 1 L', price: 6000, category: 'bebida' },
-      { id: 'coca-1-5l', name: 'Coca-Cola 1,5 L', price: 8000, category: 'bebida' },
+      { id: 'coca-personal', name: 'Coca Pers', price: 3500, category: 'bebida' },
+      { id: 'quatro-personal', name: 'Quatro Pers', price: 3500, category: 'bebida' },
+      { id: 'coca-1-5l', name: 'Coca 1.5', price: 8000, category: 'bebida' },
+      { id: 'coca-1l', name: 'Coca 1LTR', price: 6000, category: 'bebida' },
+      { id: 'jugo-hit', name: 'Jugo Hit Mini', price: 2500, category: 'bebida' },
+      { id: 'agua-con-gas', name: 'Agua con gas', price: 3000, category: 'bebida' },
+      { id: 'agua-sin-gas', name: 'Agua sin gas', price: 2500, category: 'bebida' },
+      { id: 'agua-mini', name: 'Agua mini', price: 1000, category: 'bebida' },
     ],
   },
 ];

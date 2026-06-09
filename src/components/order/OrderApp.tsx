@@ -534,13 +534,13 @@ export default function OrderApp() {
                           const addonSplit =
                             addonMeatSplits[addon.id] ?? defaultMeatSplit(0);
 
-                          const isExtraChorizo = addon.id === "extra-chorizo-carne";
-                          const expanded = !isExtraChorizo || (expandedAddons[addon.id] ?? false);
+                          const isMeatStyleAddon = itemNeedsMeatStyle(addon);
+                          const expanded = !isMeatStyleAddon || (expandedAddons[addon.id] ?? false);
 
                           return (
                             <div
                               key={addon.id}
-                              id={isExtraChorizo ? "addon-card-extra-chorizo" : undefined}
+                              id={isMeatStyleAddon ? `addon-card-${addon.id}` : undefined}
                               className={`relative overflow-hidden rounded-lg border transition-all duration-200 ${
                                 active 
                                   ? "border-flame bg-void/60 shadow-lg shadow-flame/10" 
@@ -549,24 +549,21 @@ export default function OrderApp() {
                             >
                               
                               <div 
-                                id={isExtraChorizo ? "addon-toggle-trigger-extra-chorizo" : undefined}
-                                onClick={isExtraChorizo ? () => {
+                                id={isMeatStyleAddon ? `addon-toggle-trigger-${addon.id}` : undefined}
+                                onClick={isMeatStyleAddon ? () => {
                                   setExpandedAddons((prev) => ({
                                     ...prev,
                                     [addon.id]: !prev[addon.id],
                                   }));
                                 } : undefined}
                                 className={`flex items-center justify-between gap-2 p-2.5 relative z-10 ${
-                                  isExtraChorizo ? "cursor-pointer select-none hover:bg-white/5 transition-colors" : ""
+                                  isMeatStyleAddon ? "cursor-pointer select-none hover:bg-white/5 transition-colors" : ""
                                 }`}
                               >
                                 <div className="min-w-0 flex-1">
                                   <p className="text-sm font-semibold text-cream flex items-center gap-1.5">
                                     {addon.name}
-                                    {addon.id === "enchula-choriarepa" && (
-                                      <span className="text-gold animate-pulse">🔥</span>
-                                    )}
-                                    {isExtraChorizo && (
+                                    {isMeatStyleAddon && (
                                       <span className="text-xs text-smoke font-normal transition-transform duration-200">
                                         {expanded ? '▲' : '▼'}
                                       </span>
@@ -598,7 +595,7 @@ export default function OrderApp() {
                                 <div className="px-3 pb-3 border-t border-white/5 relative z-10 animate-in fade-in slide-in-from-top-1 duration-150">
                                   <div className="mt-3">
                                     <PremiumMeatStyleSelector
-                                      id={isExtraChorizo ? "addon-selector-extra-chorizo" : undefined}
+                                      id={isMeatStyleAddon ? `addon-selector-${addon.id}` : undefined}
                                       split={addonSplit}
                                       onChange={(split) => {
                                         setAddonMeatSplits((prev) => ({
