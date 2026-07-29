@@ -6,6 +6,33 @@ export type OrderStatus =
   | 'picked_up'
   | 'cancelled';
 
+export type ShiftStatus = 'open' | 'closed';
+
+export type Shift = {
+  id: string;
+  status: ShiftStatus;
+  opened_at: string;
+  closed_at: string | null;
+};
+
+export type CashTransactionType = 'base' | 'income' | 'expense';
+
+export type CashTransaction = {
+  id: string;
+  shift_id: string;
+  type: CashTransactionType;
+  amount: number;
+  description: string | null;
+  order_id: string | null;
+  created_at: string;
+};
+
+export type ShiftTotals = {
+  base: number;
+  income: number;
+  expense: number;
+};
+
 export type OrderLineRow = {
   id: string;
   menu_item_id: string;

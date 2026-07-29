@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { createPortal } from "react-dom";
 import { formatCOP } from "../../lib/format";
+import type { CashTransaction, Shift, ShiftTotals } from "../../types/admin-order";
+import ShiftCloseModal from "./ShiftCloseModal";
 
 function formatInputCOP(rawString: string): string {
   const clean = rawString.replace(/\D/g, "");
@@ -20,9 +21,9 @@ function parseInputCOP(formattedString: string): number {
 
 interface StoreShiftManagerProps {
   isOpen: boolean;
-  shift: any | null;
-  totals: { base: number; income: number; expense: number };
-  transactions: any[];
+  shift: Shift | null;
+  totals: ShiftTotals;
+  transactions: CashTransaction[];
   sendingReport: boolean;
   loading: boolean;
   pin: string;
@@ -56,7 +57,6 @@ export default function StoreShiftManager({
   const [localError, setLocalError] = useState("");
   const [isBalanceCollapsed, setIsBalanceCollapsed] = useState(false);
   const [showCloseModal, setShowCloseModal] = useState(false);
-  const [downloadCsv, setDownloadCsv] = useState(true);
 
   const handleCloseClick = () => {
     setShowCloseModal(true);
@@ -65,7 +65,7 @@ export default function StoreShiftManager({
   const generateAndDownloadCSV = () => {
     if (!shift) return;
 
-    let csvRows = [];
+    const csvRows = [];
     csvRows.push("Reporte de Caja - Callejeros / Stray-Wolfies");
     csvRows.push(`Turno ID:,${shift.id}`);
     csvRows.push(`Apertura:,${shift.opened_at ? new Date(shift.opened_at).toLocaleString("es-CO") : ""}`);
@@ -101,13 +101,13 @@ export default function StoreShiftManager({
     const mm = String(now.getMonth() + 1).padStart(2, "0");
     const yy = String(now.getFullYear()).slice(-2);
     link.setAttribute("download", `Balance_caja_${dd}_${mm}_${yy}.csv`);
-    
+
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
-  const handleConfirmClose = async () => {
+  const handleConfirmClose = async (downloadCsv: boolean) => {
     if (downloadCsv) {
       try {
         generateAndDownloadCSV();
@@ -339,7 +339,7 @@ export default function StoreShiftManager({
                 <div className="flex flex-col gap-1">
                   <p className="text-xs font-semibold text-smoke">Movimientos del turno</p>
                   <div className="max-h-48 overflow-y-auto scrollbar-thin rounded-xl border border-white/10 bg-void/40">
-                    {transactions.map((tx: any, i: number) => (
+                    {transactions.map((tx: CashTransaction, i: number) => (
                       <div
                         key={tx.id || i}
                         className={`flex items-center justify-between gap-2 px-3 py-2 text-xs ${
@@ -407,48 +407,13 @@ export default function StoreShiftManager({
       )}
 
       {/* ── Modal de Confirmación de Cierre de Caja ── */}
-      {showCloseModal && typeof document !== "undefined"
-        ? createPortal(
-            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-void/85 p-4 backdrop-blur-md">
-              <div className="card-ash w-full max-w-sm flex flex-col gap-4 p-6 shadow-2xl border border-flame/30">
-                <h3 className="font-display text-lg text-fire text-center">Confirmar Cierre de Caja</h3>
-                <p className="text-sm text-smoke text-center leading-relaxed">
-                  ¿Estás seguro de que deseas cerrar el turno activo y cambiar el estado de la tienda a cerrada?
-                </p>
-
-                <label className="flex items-center justify-center gap-2 cursor-pointer py-2 text-sm text-cream hover:text-gold transition">
-                  <input
-                    type="checkbox"
-                    checked={downloadCsv}
-                    onChange={(e) => setDownloadCsv(e.target.checked)}
-                    className="accent-flame w-4 h-4 cursor-pointer"
-                  />
-                  Descargar reporte balance en CSV
-                </label>
-
-                <div className="flex gap-2 mt-2">
-                  <button
-                    type="button"
-                    className="btn-fire flex-1 py-2.5 text-sm"
-                    onClick={handleConfirmClose}
-                    disabled={loading}
-                  >
-                    {loading ? "Cerrando…" : "Confirmar y Cerrar"}
-                  </button>
-                  <button
-                    type="button"
-                    className="rounded-xl border border-white/15 px-4 py-2.5 text-sm text-smoke hover:text-cream transition flex-1"
-                    onClick={() => setShowCloseModal(false)}
-                    disabled={loading}
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              </div>
-            </div>,
-            document.body
-          )
-        : null}
+      {showCloseModal && (
+        <ShiftCloseModal
+          loading={loading}
+          onConfirm={handleConfirmClose}
+          onCancel={() => setShowCloseModal(false)}
+        />
+      )}
     </div>
   );
 }
